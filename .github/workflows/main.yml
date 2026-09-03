@@ -1,0 +1,46 @@
+name: Build Fence Connect iOS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build iOS project
+        run: npx expo prebuild --platform ios --no-install
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install
+
+      - name: Build iOS archive
+        run: |
+          cd ios
+          xcodebuild \
+            -workspace FenceConnect.xcworkspace \
+            -scheme FenceConnect \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath ../FenceConnect.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+
+      - name: Upload iOS build
+        uses: actions/upload-artifact@v4
+        with:
+          name: FenceConnect-iOS-build
+          path: FenceConnect.xcarchive
