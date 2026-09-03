@@ -5,19 +5,24 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+
     "ios": {
       "supportsTablet": true,
+      "icon": "./FenceConnectlogo.png",
       "bundleIdentifier": "com.fencecontrol.fenceconnect",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
+
     "android": {
       "package": "com.fencecontrol.fenceconnect"
     },
+
     "plugins": [
       "expo-status-bar"
     ],
+
     "extra": {
       "eas": {
         "projectId": "760c3942-a4ce-4a08-ab59-60936f707e28"
