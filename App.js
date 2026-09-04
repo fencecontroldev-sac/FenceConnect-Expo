@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FIREBASE =
   'https://fenceconnect-1bd91-default-rtdb.asia-southeast1.firebasedatabase.app';
@@ -1290,7 +1291,47 @@ export default function App() {
   const [selectedMachine, setSelectedMachine] =
     useState('');
 
-  const login = (nextSession) => {
+  const [checkingSession, setCheckingSession] =
+    useState(true);
+
+  // Restore previous login when app starts
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const saved =
+          await AsyncStorage.getItem(
+            'fenceConnectSession'
+          );
+
+        if (saved) {
+          const savedSession =
+            JSON.parse(saved);
+
+          if (
+            savedSession &&
+            savedSession.machineID
+          ) {
+            setSession(savedSession);
+
+            setScreen(
+              savedSession.admin
+                ? 'admin'
+                : 'dashboard'
+            );
+          }
+        }
+      } catch (error) {
+        // Ignore invalid saved session
+      } finally {
+        setCheckingSession(false);
+      }
+    };
+
+    restoreSession();
+  }, []);
+
+  // Save login
+  const login = async (nextSession) => {
     setSession(nextSession);
 
     setScreen(
@@ -1298,11 +1339,30 @@ export default function App() {
         ? 'admin'
         : 'dashboard'
     );
+
+    try {
+      await AsyncStorage.setItem(
+        'fenceConnectSession',
+        JSON.stringify(nextSession)
+      );
+    } catch (error) {
+      // Ignore storage error
+    }
   };
 
-  const logout = () => {
+  // Logout and remove saved login
+  const logout = async () => {
     setSession(null);
+    setSelectedMachine('');
     setScreen('login');
+
+    try {
+      await AsyncStorage.removeItem(
+        'fenceConnectSession'
+      );
+    } catch (error) {
+      // Ignore storage error
+    }
   };
 
   const go = (next) => setScreen(next);
@@ -1311,6 +1371,19 @@ export default function App() {
     setSelectedMachine(id);
     setScreen('dashboard');
   };
+
+  // Show loading while checking saved login
+  if (checkingSession) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <ActivityIndicator
+          size="large"
+          color="#1E5EFF"
+          style={{ marginTop: 50 }}
+        />
+      </SafeAreaView>
+    );
+  }
 
   if (!session) {
     return <Login onLogin={login} />;
